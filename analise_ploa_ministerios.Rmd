@@ -1,3 +1,12 @@
+---
+title: "Análise PLOA por ministérios"
+output: word_document
+date: "2024-01-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+
 library(tidyverse)
 library(viridis)
 library(ggrepel)
@@ -5,15 +14,10 @@ library(ggrepel)
 ploa2024<- readr::read_csv2("ploa2024_rp.csv", locale = readr::locale(encoding = "LATIN1"))
 
 
-dado_mdic<-
-  ploa2024 %>%
-  filter(ministerio=="mdic") %>%
-  mutate(variacao_perc = ifelse(is.infinite(variacao_perc),NA,variacao_perc))
+```
 
-dado_mdic%>%
-  write_csv("dado_mdic.csv")
-  
 
+```{r}
 #ranking por valor total
 dados_grafico<-
   ploa2024 %>%
@@ -51,7 +55,10 @@ dados_grafico %>%
     y = ""
   )
 
+```
 
+
+```{r}
 #ranking por variação do valor percentual total
 
 dados_grafico<-
@@ -94,9 +101,10 @@ dados_grafico %>%
     y = ""
   )
 
+```
 
 
-
+```{r}
 #Ranking de variação total do PLOA
 
 dados_grafico<-
@@ -140,10 +148,10 @@ dados_grafico %>%
     y = ""
   )
 
+```
 
-  
 
-
+```{r}
 #ranking por valor total de emendas
 dados_grafico_sumarizado<-
   ploa2024 %>%
@@ -199,8 +207,11 @@ ploa2024 %>%
   ) +
   facet_wrap(indicador_rp~.)
 
+```
 
-#ranking por valor percentual de emendas
+
+```{r}
+#distribuição dos valores percentuais de emendas
 
 dados_grafico<-
   ploa2024 %>%
@@ -263,5 +274,5 @@ dados_grafico %>%
     y = ""
   )
 
-
+```
 
