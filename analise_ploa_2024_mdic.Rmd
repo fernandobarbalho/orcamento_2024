@@ -1,0 +1,47 @@
+---
+title: "Análise PLOA 2024 para MDIC"
+output: word_document
+date: "2024-01-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(readr)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+# Carregar dados
+dados_mdic <- read_csv("dado_mdic.csv")
+
+# Selecionar e renomear colunas
+colunas_selecionadas <- c( 'indicador_rp', 'pl', 'acrescimo', 'cancelamento', 'total', 'variacao', 'variacao_perc')
+# Dividir valores numéricos por 1.000.000 (exceto última coluna) e formatar
+
+
+dados_mdic <- dados_mdic %>%
+  mutate(across(where(is.numeric) & !variacao_perc, ~format(round(./1000000,0), big.mark = ".", decimal.mark = ",", nsmall = 1, justify = "right")))
+
+dados_mdic$variacao_perc <- round(dados_mdic$variacao_perc,1)
+
+nomes_amigaveis <- c('Indicador', 'PL (Milhões R$)', 'Acréscimo (Milhões R$)', 'Cancelamento (Milhões R$)', 'Total (Milhões R$)', 'Variação (Milhões R$)', 'Variação (%)')
+dados_mdic <- dados_mdic[colunas_selecionadas]
+names(dados_mdic) <- nomes_amigaveis
+
+
+# Criar tabela com cores alternadas e alinhamento à direita para valores numéricos
+kable(dados_mdic, format = "simple",  align = c('l', rep('r', 6)), caption = "Alterações na PLOA 2024 para o MDIC") %>%
+  kable_styling(latex_options = c("striped", "HOLD_position"), full_width = F, position = "center") %>%
+  row_spec(0, bold = TRUE, background = "gray90") %>%
+  row_spec(seq(1, nrow(dados_mdic), by = 2), background = "gray95") 
+
+```
+
