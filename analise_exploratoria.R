@@ -1,4 +1,6 @@
 library(tidyverse)
+library(viridis)
+library(ggrepel)
 
 ploa2024<- readr::read_csv2("ploa2024_rp.csv", locale = readr::locale(encoding = "LATIN1"))
 
@@ -29,9 +31,10 @@ dados_grafico %>%
   mutate(ministerio_nome = reorder(ministerio_nome, total)) %>%
   mutate(sinal= as.character(sign(total))) %>%
   ggplot(aes(x = total, y = ministerio_nome)) +
-  geom_col() +
+  geom_col(aes(fill="black")) +
   geom_text(aes(label = total), 
-            hjust = -0.1, 
+            hjust =  c(rep(-0.1,29),1), 
+            color = c(rep("black",29),"white"),
             size = 2,
             show.legend = FALSE) +
   theme_light() +
@@ -60,6 +63,11 @@ dados_grafico<-
 cor_ministerio <- ifelse(dados_grafico$ministerio == "mdic", "orange", "gray")
 
 
+fab<-
+  dados_grafico %>%
+  mutate(variacao_perc = round(variacao_perc, 1)) %>%
+  mutate(ministerio_nome = reorder(ministerio_nome, variacao_perc)) %>%
+  mutate(sinal= as.character(sign(variacao_perc)))
 
 dados_grafico %>%
   mutate(variacao_perc = round(variacao_perc, 1)) %>%
@@ -68,8 +76,9 @@ dados_grafico %>%
   ggplot(aes(x = variacao_perc, y = ministerio_nome)) +
   geom_col(aes(fill = sinal),show.legend = FALSE) +
   geom_text(aes(label = paste0(variacao_perc,"%")), 
-            hjust = -0.1, 
-            size = 2,
+            hjust =  c(rep(-0.1,29),1), 
+            color = c(rep("black",29),"white"),
+            size = 3,
             show.legend = FALSE) +
   scale_fill_manual(values = c("red","white", "blue")) +  # Define as cores para valores negativos e positivos
   theme_light() +
@@ -99,6 +108,11 @@ dados_grafico<-
 cor_ministerio <- ifelse(dados_grafico$ministerio == "mdic", "orange", "gray")
 
 
+fab<-
+  dados_grafico %>%
+  mutate(variacao = round(variacao/10^6, 1)) %>%
+  mutate(ministerio_nome = reorder(ministerio_nome, variacao)) %>%
+  mutate(sinal= as.character(sign(variacao)))
 
 dados_grafico %>%
   mutate(variacao = round(variacao/10^6, 1)) %>%
@@ -106,9 +120,10 @@ dados_grafico %>%
   mutate(sinal= as.character(sign(variacao))) %>%
   ggplot(aes(x = variacao, y = ministerio_nome)) +
   geom_col(aes(fill = sinal),show.legend = FALSE) +
-  geom_text(aes(label = variacao), 
-            hjust = -0.1, 
-            size = 2,
+  geom_text(aes(label = scales::number(variacao,big.mark = ".", decimal.mark = ",")), 
+            hjust =  c(rep(-0.1,29),1), 
+            color = c(rep("black",29),"white"),
+            size = 3,
             show.legend = FALSE) +
   scale_fill_manual(values = c("red", "blue")) +  # Define as cores para valores negativos e positivos
   theme_light() +
@@ -162,11 +177,11 @@ ploa2024 %>%
   mutate(total = round(total/10^6, 1)) %>%
   mutate(ministerio_nome = fct_reorder(ministerio_nome, .x= total,.fun= sum)) %>%
   ggplot(aes(x = total, y = ministerio_nome)) +
-  geom_col() +
-  geom_text(aes(label = total), 
+  geom_col(fill="black") +
+  geom_text(aes(label = scales::number(total,big.mark = ".", decimal.mark = ",") ), 
             hjust = c(rep(-0.1,63),rep(1,3),rep(-0.1,9)),
             color = c(rep("black",63),rep("white",3),rep("black",9)),
-            size = 2,
+            size = 2.5,
             show.legend = FALSE) +
   theme_light() +
   theme(
@@ -183,3 +198,70 @@ ploa2024 %>%
     y = ""
   ) +
   facet_wrap(indicador_rp~.)
+
+
+#ranking por valor percentual de emendas
+
+dados_grafico<-
+  ploa2024 %>%
+  filter(substr(indicador_rp,1,1) %in% c("6","7","8")|
+           indicador_rp == "total RP") %>%
+  select(ministerio, ministerio_nome, indicador_rp, total) %>%
+  pivot_wider( names_from = indicador_rp, values_from = total ) %>%
+  janitor::clean_names() %>%
+  mutate(individuais_obrigatorias = (x6_discricionaria_decorrente_de_emendas_individuais_de_execucao_obrigatoria/total_rp)*100,
+         comissao_permanente = (x8_discricionaria_decorrente_de_emendas_de_comissao_permanente/total_rp)*100,
+         bancada_impositiva = (x7_discricionaria_decorrente_de_emendas_de_bancada_impositiva/total_rp)*100) %>%
+  select(ministerio, ministerio_nome,individuais_obrigatorias, comissao_permanente, bancada_impositiva ) %>%
+  pivot_longer(cols =individuais_obrigatorias:bancada_impositiva ,
+               names_to = "indicador_rp",
+               values_to = "valor") %>%
+  mutate(indicador_rp = str_replace_all(indicador_rp,"_"," ")) %>%
+  mutate(indicador_rp = str_to_title(indicador_rp))
+
+mdic_emendas<-
+  dados_grafico %>%
+  filter(ministerio == "mdic")
+
+perc_maximo  <-
+  dados_grafico %>%
+  summarise(valor = max(valor, na.rm = TRUE),
+            .by = indicador_rp) %>%
+  inner_join(dados_grafico)
+
+dados_grafico %>%
+  anti_join(mdic_emendas) %>%
+  anti_join(perc_maximo) %>%
+  ggplot(aes(x=indicador_rp, y= valor)) +
+  geom_jitter(aes(fill = indicador_rp ),show.legend = FALSE, pch=21, color="white",size=2) +
+  geom_point(data= mdic_emendas, aes(fill = indicador_rp ),show.legend = FALSE, pch=21, color="white",size=2) +
+  geom_point(data= perc_maximo, aes(fill = indicador_rp ),show.legend = FALSE, pch=21, color="white",size=2) +
+  geom_text_repel(data= mdic_emendas, 
+                  aes(label = paste0(ministerio," ",round(valor,1),"%")),
+                  force = 2,
+                  #force_pull = .1,
+                  box.padding = 0.8,
+                  direction = "y",
+                  seed = 16) +
+  geom_text_repel(data= perc_maximo, aes(label = paste0(ministerio_nome," ",round(valor,1),"%")),
+                  force = 2,
+                  #force_pull = .1,
+                  box.padding = 0.8,
+                  direction = "y",
+                  seed = 16) +
+  scale_fill_viridis(discrete = TRUE)  +
+  theme_light() +
+  theme(
+    panel.grid = element_blank(),
+    panel.border = element_blank(),
+    legend.position = "bottom",
+    axis.text.y = element_text(size= 8, color = c(cor_ministerio))
+  ) +
+  labs(
+    title = "Distribuição dos percentuais de emendas",
+    x = "",
+    y = ""
+  )
+
+
+
