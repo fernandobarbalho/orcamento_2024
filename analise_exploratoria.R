@@ -21,7 +21,7 @@ dados_grafico<-
   arrange(total)
 
 
-cor_ministerio <- ifelse(dados_grafico$ministerio == "mdic", "orange", "gray")
+cor_ministerio <- ifelse(dados_grafico$ministerio == "mdic", "orange", "#333333")
 
 
 
@@ -60,7 +60,7 @@ dados_grafico<-
   arrange(variacao_perc)
   
 
-cor_ministerio <- ifelse(dados_grafico$ministerio == "mdic", "orange", "gray")
+cor_ministerio <- ifelse(dados_grafico$ministerio == "mdic", "orange", "#333333")
 
 
 fab<-
@@ -105,7 +105,7 @@ dados_grafico<-
   arrange(variacao)
 
 
-cor_ministerio <- ifelse(dados_grafico$ministerio == "mdic", "orange", "gray")
+cor_ministerio <- ifelse(dados_grafico$ministerio == "mdic", "orange", "#333333")
 
 
 fab<-
@@ -153,7 +153,12 @@ dados_grafico_sumarizado<-
   arrange(total)
 
 
-cor_ministerio <- ifelse(dados_grafico_sumarizado$ministerio == "mdic", "orange", "gray")
+cor_ministerio <- ifelse(dados_grafico_sumarizado$ministerio == "mdic", "orange", "#333333")
+
+ploa2024 %>%
+  filter(substr(indicador_rp,1,1) %in% c("6","7","8")) %>% 
+  summarise(total = sum(total),
+            .by = indicador_rp)
 
 
 fab<-
@@ -228,6 +233,16 @@ perc_maximo  <-
   summarise(valor = max(valor, na.rm = TRUE),
             .by = indicador_rp) %>%
   inner_join(dados_grafico)
+
+perc_maximo  <-
+dados_grafico %>%
+  slice_max(order_by = valor,
+            n=5)
+
+dados_grafico %>%
+  summarise(valor = median(valor, na.rm = TRUE),
+            .by = indicador_rp)
+  
 
 dados_grafico %>%
   anti_join(mdic_emendas) %>%

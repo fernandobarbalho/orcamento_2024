@@ -1,6 +1,8 @@
 ---
 title: "Análise PLOA por ministérios"
-output: word_document
+output:
+  html_document:
+    df_print: paged
 date: "2024-01-11"
 ---
 
